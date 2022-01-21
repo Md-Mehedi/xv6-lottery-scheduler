@@ -6,6 +6,9 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "pstat.h"
+#include "random.h"
+// #include <stdlib.h>
 
 struct {
   struct spinlock lock;
@@ -88,6 +91,9 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->tickets = MAX_TICKET_VALUE/2;  // Setting tickets
+  p->ticks = 0;                     // Initialize ticks by 0
+
 
   release(&ptable.lock);
 
@@ -196,6 +202,7 @@ fork(void)
     np->state = UNUSED;
     return -1;
   }
+  np->tickets = curproc->tickets;    // Setting tickets to child process as parent process
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
@@ -322,7 +329,7 @@ wait(void)
 void
 scheduler(void)
 {
-  struct proc *p;
+  struct proc *p, *winner_proc;
   struct cpu *c = mycpu();
   c->proc = 0;
   
@@ -332,24 +339,53 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+
+    int total_ticket_count = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      total_ticket_count += p->tickets;
+    }
+    int winner = random_at_most(total_ticket_count);
+    int sum = 0;
+    winner_proc = 0;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      // cprintf("random : %d\n", random_at_most(100));
+      // if(p->pid != 0) cprintf("%d %d %d %d\n", p->pid, winner, sum, p->tickets);
       if(p->state != RUNNABLE)
         continue;
-
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
-
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      c->proc = 0;
+      else if(winner <= sum + p->tickets){
+        // cprintf("winner proc set to %d\n", p->pid);
+        winner_proc = p;
+        break;
+      }
+      // if(sum < winner || (p->state != RUNNABLE && sum >= winner))
+      // // if(p->state != RUNNABLE)
+      //   continue;
+      sum += p->tickets;
     }
+
+    if(winner_proc == 0) {
+      release(&ptable.lock);
+      continue;
+    }
+    p = winner_proc;
+    // cprintf("winner is working \n");
+    // Switch to chosen process.  It is the process's job
+    // to release ptable.lock and then reacquire it
+    // before jumping back to us.
+    c->proc = p;
+    int xtick = uptime();
+    // cprintf("ticks : %d\n", xtick);
+    switchuvm(p);
+    p->state = RUNNING;
+    // if(p->pid>2) cprintf("pid %d state %d\n", p->pid, p->state);
+
+    swtch(&(c->scheduler), p->context);
+    switchkvm();
+
+    p->ticks += (uptime()-xtick);
+    // Process is done running for now.
+    // It should have changed its p->state before coming back.
+    c->proc = 0;
     release(&ptable.lock);
 
   }
@@ -531,4 +567,30 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+int uptime(void){
+  uint xticks;
+
+  acquire(&tickslock);
+  xticks = ticks;
+  release(&tickslock);
+  return xticks;
+}
+
+
+void getpinfo(struct pstat* stat){
+  struct proc *p;
+
+  acquire(&ptable.lock);
+
+  for(int i=0; i<NPROC; i++){
+    p = &ptable.proc[i];
+    stat->inuse[i] = p->state == RUNNING || p->state == RUNNABLE ? 1 : 0;
+    stat->pid[i] = p->pid;
+    stat->tickets[i] = p->tickets;
+    stat->ticks[i] = p->ticks;
+  }
+
+  release(&ptable.lock);
 }

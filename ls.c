@@ -2,6 +2,7 @@
 #include "stat.h"
 #include "user.h"
 #include "fs.h"
+#include "pstat.h"
 
 char*
 fmtname(char *path)
@@ -73,6 +74,14 @@ ls(char *path)
 int
 main(int argc, char *argv[])
 {
+
+  struct pstat stat;
+  stat.inuse[0] = 10;
+  stat.pid[0] = 20;
+  stat.tickets[0] = 30;
+  stat.ticks[0] = 40;
+  getpinfo(&stat);
+
   int i;
 
   if(argc < 2){

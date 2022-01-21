@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "stat.h": "c",
+        "spinlock.h": "c",
+        "proc.h": "c",
+        "types.h": "c",
+        "defs.h": "c",
+        "x86.h": "c",
+        "date.h": "c",
+        "user.h": "c",
+        "pstat.h": "c",
+        "param.h": "c",
+        "random.h": "c"
+    }
+}

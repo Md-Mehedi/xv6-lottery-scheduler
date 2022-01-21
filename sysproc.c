@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
+#include "pstat.h"
 
 int
 sys_fork(void)
@@ -82,10 +83,41 @@ sys_sleep(void)
 int
 sys_uptime(void)
 {
-  uint xticks;
+  // uint xticks;
 
-  acquire(&tickslock);
-  xticks = ticks;
-  release(&tickslock);
-  return xticks;
+  // acquire(&tickslock);
+  // xticks = ticks;
+  // release(&tickslock);
+  return uptime();
+}
+
+
+
+/**************** Code for Loterry Schedule *****************/
+int sys_settickets(void){
+  int number;
+  argint(0, &number);
+  if(argint(0, &number) < 0)
+    return -1;
+  if(number < 1)
+    return -1;
+  
+  struct proc* p = myproc();
+  p->tickets = number;
+  cprintf("%d tickets set for pid %d\n", number, p->pid);
+  return 0;
+}
+
+int sys_getpinfo(void){
+  struct pstat * stat = 0;
+  if(argptr(0, (void*)&stat, sizeof(*stat)) < 0)
+    return -1;
+  if(stat == 0)
+    return -1;
+
+  getpinfo(stat);
+  return 0;
+  
+  // cprintf("passing arg : %d %d %d %d\n", stat->inuse[1], stat->pid[0], stat->tickets[0], stat->ticks[0]);
+  return 0;
 }
