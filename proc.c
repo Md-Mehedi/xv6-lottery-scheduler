@@ -90,8 +90,8 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->tickets = MAX_TICKET_VALUE/2;  // Setting tickets
-  p->ticks = 0;                     // Initialize ticks by 0
+  p->tickets = 1;   // Setting tickets
+  p->ticks = 0;     // Initialize ticks by 0
 
 
   release(&ptable.lock);
