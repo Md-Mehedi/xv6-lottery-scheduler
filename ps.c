@@ -3,8 +3,10 @@
 #include "user.h"
 #include "pstat.h"
 
+// Print the status of processes
 void print(struct pstat *stat)
 {
+    printf(1, "pid\tinuse\ttickets\tticks\n");
     for (int i = 0; i < NPROC; i++)
     {
         if (stat->pid[i] == 0)
@@ -13,6 +15,7 @@ void print(struct pstat *stat)
     }
 }
 
+// Swap two process data between i and j position
 void swap(struct pstat *stat, int i, int j)
 {
     int pid = stat->pid[i];
@@ -31,6 +34,8 @@ void swap(struct pstat *stat, int i, int j)
     stat->ticks[j] = ticks;
 }
 
+// Sort the process status according to tickets count descending
+// This function uses 'Selection Sort'
 void sort(struct pstat *stat)
 {
     int max_pos = 0;
@@ -46,9 +51,7 @@ void sort(struct pstat *stat)
         }
         if (max_pos != i)
         {
-            // printf(1, "swap with %d and %d\n", max_pos, i);
             swap(stat, i, max_pos);
-            // print(stat);
         }
     }
 }
@@ -61,9 +64,14 @@ int main(int argc, char *argv[])
         exit();
     }
     struct pstat stat;
+
+    // Getting process infos by system call
     getpinfo(&stat);
-    printf(1, "pid\tinuse\ttickets\tticks\n");
+
+    // Sorting the results
     sort(&stat);
+
+    // Printing the infos
     print(&stat);
 
     exit();

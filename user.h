@@ -1,8 +1,6 @@
 struct stat;
 struct rtcdate;
-/**************** Code for Loterry Schedule *****************/
-struct pstat;
-/**************** Code for Loterry Schedule *****************/
+struct pstat;       // structure from pstat.h
 
 // system calls
 int fork(void);
@@ -26,10 +24,9 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-/**************** Code for Loterry Schedule *****************/
+// New system call
 int settickets(int number);
 int getpinfo(struct pstat*);
-/**************** Code for Loterry Schedule *****************/
 
 
 // ulib.c

@@ -9,7 +9,7 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
-struct pstat;
+struct pstat;       // Structure from pstat.h
 
 // bio.c
 void            binit(void);
@@ -121,8 +121,8 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
-void            getpinfo(struct pstat*);
-int             uptime(void);
+void            getpinfo(struct pstat*);    // New system call
+int             uptime(void);               // New system call
 
 // swtch.S
 void            swtch(struct context**, struct context*);

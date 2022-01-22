@@ -94,6 +94,9 @@ sys_uptime(void)
 
 
 /**************** Code for Loterry Schedule *****************/
+
+// Setting tickets for the caller process
+// arg1 (int) : number of tickets 
 int sys_settickets(void){
   int number;
   argint(0, &number);
@@ -108,6 +111,8 @@ int sys_settickets(void){
   return 0;
 }
 
+// Generate the process info from the process table
+// arg1 (struct pstat*) : info structure
 int sys_getpinfo(void){
   struct pstat * stat = 0;
   if(argptr(0, (void*)&stat, sizeof(*stat)) < 0)
@@ -115,9 +120,7 @@ int sys_getpinfo(void){
   if(stat == 0)
     return -1;
 
+  // Calling the funcion of proc.c to generate process info
   getpinfo(stat);
-  return 0;
-  
-  // cprintf("passing arg : %d %d %d %d\n", stat->inuse[1], stat->pid[0], stat->tickets[0], stat->ticks[0]);
   return 0;
 }

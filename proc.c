@@ -7,8 +7,7 @@
 #include "proc.h"
 #include "spinlock.h"
 #include "pstat.h"
-#include "random.h"
-// #include <stdlib.h>
+#include "random.h"   // random number generator
 
 struct {
   struct spinlock lock;
@@ -319,6 +318,7 @@ wait(void)
 }
 
 //PAGEBREAK: 42
+// This sheduler works as a 'Lottery Scheduler'
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -337,57 +337,63 @@ scheduler(void)
     // Enable interrupts on this processor.
     sti();
 
-    // Loop over process table looking for process to run.
     acquire(&ptable.lock);
 
+    // Adding all ticket count sothat can lottery in between them
     int total_ticket_count = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       total_ticket_count += p->tickets;
     }
+
+    // Selecting a winner by lottery
     int winner = random_at_most(total_ticket_count);
-    int sum = 0;
+
+    // Finding the winner by searching
+    // A winner is selected if 
+    // winner_tickets <= cumulative_sum + process_tickets 
+    // and it must be RUNNABLE
     winner_proc = 0;
+    int sum = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      // cprintf("random : %d\n", random_at_most(100));
-      // if(p->pid != 0) cprintf("%d %d %d %d\n", p->pid, winner, sum, p->tickets);
       if(p->state != RUNNABLE)
         continue;
       else if(winner <= sum + p->tickets){
-        // cprintf("winner proc set to %d\n", p->pid);
+        // The winner found
         winner_proc = p;
         break;
       }
-      // if(sum < winner || (p->state != RUNNABLE && sum >= winner))
-      // // if(p->state != RUNNABLE)
-      //   continue;
       sum += p->tickets;
     }
 
+    // If any winner is not found then
+    // lottery and find again
     if(winner_proc == 0) {
       release(&ptable.lock);
       continue;
     }
+
+    // Setting the winner process to execute
     p = winner_proc;
-    // cprintf("winner is working \n");
+    
     // Switch to chosen process.  It is the process's job
     // to release ptable.lock and then reacquire it
     // before jumping back to us.
     c->proc = p;
-    int xtick = uptime();
-    // cprintf("ticks : %d\n", xtick);
+
+    // Counting ticks knowing the uptime
+    // before and after of switching
     switchuvm(p);
     p->state = RUNNING;
-    // if(p->pid>2) cprintf("pid %d state %d\n", p->pid, p->state);
-
+    int xtick = uptime();
     swtch(&(c->scheduler), p->context);
+    xtick = uptime()-xtick;
     switchkvm();
 
-    p->ticks += (uptime()-xtick);
     // Process is done running for now.
     // It should have changed its p->state before coming back.
+    p->ticks += xtick;
     c->proc = 0;
     release(&ptable.lock);
-
   }
 }
 
@@ -569,9 +575,12 @@ procdump(void)
   }
 }
 
+// Return the current ticks
+// To know the process ticks apply uptime()
+// before and after of process execution
 int uptime(void){
   uint xticks;
-
+  // Accessing the ticks variable tickslock should be acquired
   acquire(&tickslock);
   xticks = ticks;
   release(&tickslock);
@@ -579,18 +588,28 @@ int uptime(void){
 }
 
 
+// Generate the process info including
+// inuse  : is this process currently use or not
+// pid    : process id
+// tickets: number of tickets a process hold
+// ticks  : number of time this process get CPU cycle
 void getpinfo(struct pstat* stat){
   struct proc *p;
 
+  // Before accessing the process table ptable.lock is aquired
   acquire(&ptable.lock);
 
+  // Loop over the process table to generate the infos
   for(int i=0; i<NPROC; i++){
     p = &ptable.proc[i];
+
+    // Setting inuse = 1 if this process is RUNNING or RUNNABLE
     stat->inuse[i] = p->state == RUNNING || p->state == RUNNABLE ? 1 : 0;
     stat->pid[i] = p->pid;
     stat->tickets[i] = p->tickets;
     stat->ticks[i] = p->ticks;
   }
 
+  // After accessing process table releasing the ptable.lock
   release(&ptable.lock);
 }

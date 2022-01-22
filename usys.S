@@ -29,7 +29,6 @@ SYSCALL(getpid)
 SYSCALL(sbrk)
 SYSCALL(sleep)
 SYSCALL(uptime)
-/**************** Code for Loterry Schedule *****************/
+/* New system call */
 SYSCALL(settickets)
 SYSCALL(getpinfo)
-/**************** Code for Loterry Schedule *****************/

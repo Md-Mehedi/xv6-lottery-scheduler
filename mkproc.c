@@ -6,45 +6,55 @@
 
 int main(int argc, char *argv[])
 {
-    int pid;
-    int k, n;
+    int process_id;
+    int i, process_count;
     int x, z;
 
     if (argc < 2)
-        n = 1; //Default
-    else
-        n = atoi(argv[1]);
-    if (n < 0 || n > NPROC-2){
-        printf(1, "maximum process limit 62");
-        n = 2;
+    {
+        // If not argument passed only
+        // 1 process will be created
+        process_count = 1;
     }
-    x = 0;
-    pid = 0;
+    else
+    {
+        process_count = atoi(argv[1]);
+    }
+    if (process_count > NPROC - 2)
+    {
+        printf(1, "Error!! No process can be created\nAt a time maximum 62 process can be created\n");
+        exit();
+    }
+    if (process_count <= 0)
+    {
+        printf(1, "Argument is not correct. Type mkproc <1..62>\n");
+        exit();
+    }
 
-    for (k = 0; k < n; k++)
+    x = 0;
+    process_id = 0;
+
+    // Calling process only creates process by fork()
+    // Every child process stucks in the loop which
+    // consume the CPU time. After executing loop
+    // break the outer loop.
+    for (i = 0; i < process_count; i++)
     {
         int tickets = random_at_most(MAX_TICKET_VALUE);
-        pid = fork();
-        if (pid < 0)
+        process_id = fork();
+        if (process_id < 0)
         {
-            printf(1, "process limit exceeded");
+            printf(1, "Maximum process limit exceeded");
         }
-        // else if (pid > 0)
-        // {
-        //     // parent
-        //     printf(1, "Parent %d creating child %d\n", getpid(), pid);
-        //     //   wait();
-        // }
-        else if (pid == 0)
+        else if (process_id == 0)
         {
-            // printf(1, "Child %d created\n", getpid());
             settickets(tickets);
+            //Useless loop for calculation to consume CPU Time
             for (z = 0; z < 4000000000; z += 1)
-                // printf(1, "%d\n", random_at_most(100));
-                x = x + 3.14 * 89.64; //Useless calculation to consume CPU Time
+                x = x + 13.19 * 66.66; // Useless calculation
+            printf(1, "Process %d has done it's work\n", process_id);
             break;
         }
     }
-    // printf(1, "ok\n");
     exit();
 }
