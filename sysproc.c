@@ -107,7 +107,7 @@ int sys_settickets(void){
   
   struct proc* p = myproc();
   p->tickets = number;
-  cprintf("%d tickets set for pid %d\n", number, p->pid);
+  // cprintf("%d tickets set for pid %d\n", number, p->pid);
   return 0;
 }
 

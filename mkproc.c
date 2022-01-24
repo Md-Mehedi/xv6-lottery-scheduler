@@ -55,6 +55,9 @@ int main(int argc, char *argv[])
             printf(1, "Process %d has done it's work\n", process_id);
             break;
         }
+        else{
+            printf(1, "process %d created with tickets %d\n", process_id, tickets);
+        }
     }
     exit();
 }
